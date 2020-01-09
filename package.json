@@ -14,7 +14,7 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build",
-    "dev": "electron .",
+    "dev": "concurrently \"wait-on http://localhost:3000 && electron .\" \"cross-env BROWSER=none npm start\"",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -34,7 +34,10 @@
     ]
   },
   "devDependencies": {
+    "concurrently": "^5.0.2",
+    "cross-env": "^6.0.3",
     "electron": "^7.1.8",
-    "electron-is-dev": "^1.1.0"
+    "electron-is-dev": "^1.1.0",
+    "wait-on": "^3.3.0"
   }
 }
