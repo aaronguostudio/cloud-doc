@@ -9,6 +9,8 @@
 - For disabling open browser automatically
   - yarn add --dev cross-env
   - cross-env BROWSER=none npm start
+- React code styles
+  - It's build-in, check this [link](https://www.npmjs.com/package/eslint-config-react-app)
 
 ## Development
 
