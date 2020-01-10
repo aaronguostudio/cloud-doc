@@ -1,6 +1,6 @@
 # Cloud Doc with Electron and React
 
-## Environment Configuration
+## Environment configuration
 
 - For running react and electron concurrently
   - yarn add --dev concurrently
@@ -16,4 +16,14 @@
 
 - yarn dev
 
-<!-- https://coding.imooc.com/lesson/384.html#mid=28143 -->
+## Design and implementations
+
+- react-fontawsome
+
+## Learned from the project
+
+- Unidirectional data flow makes the developemnt easier. When build a project, we can start from the basic component, define the props, just make sure it will invoke the callback.
+
+
+
+<!-- https://coding.imooc.com/lesson/384.html#mid=28147 -->
