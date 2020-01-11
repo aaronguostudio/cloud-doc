@@ -1,5 +1,11 @@
+.app, .main {
+  height: 100vh;
+}
 .icon-button {
   background: none;
   border: none;
   color: inherit;
+}
+.c-link {
+  cursor: pointer;
 }
