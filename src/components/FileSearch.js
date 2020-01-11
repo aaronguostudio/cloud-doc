@@ -14,19 +14,20 @@ const FileSearch = ({ title, onFileSearch }) => {
   const closeSearch = () => {
     setInputActive(false)
     setValue('')
+    onFileSearch('')
   }
 
   useEffect(() => {
     if (!inputActive) return
     if (enterKeyPressed) onFileSearch(value)
     if (escKeyPressed) closeSearch()
-  })
+  }, [inputActive, enterKeyPressed, escKeyPressed])
 
   useEffect(() => {
     if (inputActive) {
       node.current.focus()
     }
-  })
+  }, [inputActive])
 
   return (
     <div className="alert d-flex justify-content-between align-items-center mb-0">

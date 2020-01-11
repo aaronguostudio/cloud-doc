@@ -11,7 +11,7 @@ const TabList = ({ files, activeId, unsaveIds, onTabClick, onCloseTab}) => {
       {files.map(file => {
         const withUnsavedMark = unsaveIds.includes(file.id)
         const fClassName = classNames({
-          'nav-link': true,
+          'nav-link c-link': true,
           'active': file.id === activeId,
           'withUnsaved': withUnsavedMark
         })

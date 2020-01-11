@@ -10,7 +10,7 @@ const BottomBtn = ({ text, colorClass, icon, onBtnClick }) => (
   >
     <FontAwesomeIcon
       className="mr-2"
-      size="lg"
+      size="1x"
       icon={icon}
     />
     {text}
