@@ -19,6 +19,7 @@
 ## Design and implementations
 
 - react-fontawsome
+- react-simplemde-editor
 
 ## Learned from the project
 
