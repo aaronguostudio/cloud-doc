@@ -28,7 +28,8 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
 
       if (enterKeyPressed) {
         onSaveEdit(editItem.id, trimmedValue, editItem.isNew)
-        closeEdit(editItem)
+        setEditStatus(false)
+        setValue('')
       }
 
       if (escKeyPressed) closeEdit(editItem)

@@ -1,25 +1,38 @@
 import React, { useState } from 'react';
-import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faSave } from '@fortawesome/free-solid-svg-icons'
 import uuidv4 from 'uuid/v4'
 import SimpleMDE from 'react-simplemde-editor'
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'easymde/dist/easymde.min.css'
-import { flattenArr, objToArr } from './utils/helper'
+import { objToArr } from './utils/helper'
 import fileHelper from './utils/fileHelper'
 
 import FileSearch from './components/FileSearch'
 import FileList from './components/FileList'
 import BottomBtn from './components/BottomBtn'
 import TabList from './components/TabList'
-import defaultFiles from './utils/defaultFiles'
 
 const { join } = window.require('path') // bypass webpack packaging system
 const { remote } = window.require('electron')
+const Store = window.require('electron-store')
+
+const fileStore = new Store({name: 'Files Data'})
+
+// map files to files data in the store
+const saveFilesToStore = files => {
+  const filesStoreObj = objToArr(files).reduce((res, file) => {
+    const { id, path, title, createAt } = file
+    res[id] = { id, path, title, createAt }
+    return res
+  }, {})
+
+  fileStore.set('files', filesStoreObj)
+}
 
 function App() {
 
-  const [files, setFiles] = useState(flattenArr(defaultFiles))
+  const [files, setFiles] = useState(fileStore.get('files') || {})
   const [activeFileID, setActiveFileID] = useState('')
   const [openedFileIDs, setOpenedFieldIDs] = useState([])
   const [unsavedFileIDs, setUnsanvedFileIDs] = useState([])
@@ -34,6 +47,24 @@ function App() {
 
   const fileClick = id => {
     setActiveFileID(id)
+    const currentFile = files[id]
+
+    // only load only when open the file
+    if (!currentFile.isLoaded) {
+      fileHelper.readFile(currentFile.path)
+        .then(data => {
+          const newFile = {
+            ...files[id],
+            body: data,
+            isLoaded: true
+          }
+          setFiles({
+            ...files,
+            [id]: newFile
+          })
+        })
+    }
+
     if (openedFileIDs.includes(id)) return
     setOpenedFieldIDs([...openedFileIDs, id])
   }
@@ -56,13 +87,17 @@ function App() {
   }
 
   const deleteFile = id => {
-    fileHelper.deleteFile(
-      join(savedLocation, `${files[id].title}.md`)
-    ).then(() => {
-      delete files[id]
-      setFiles(files)
-      tabClose(id)
-    })
+    // extract other fields except id
+    const { [id]: value, ...afterDelete } = files
+    setFiles(afterDelete)
+
+    if (!files[id].isNew) {
+      fileHelper.deleteFile(files[id].path)
+        .then(() => {
+          saveFilesToStore(files)
+          tabClose(id)
+        })
+    }
   }
 
   const fileSearch = keyword => {
@@ -87,29 +122,38 @@ function App() {
   }
 
   const updateFileName = (id, title, isNew) => {
+    const newPath = join(savedLocation, `${title}.md`)
     const modifiedFile = {
       ...files[id],
       title,
-      isNew: false
+      isNew: false,
+      path: newPath
     }
+    const newFiles = { ...files, [id]: modifiedFile }
 
     if (isNew) {
       fileHelper
         .writeFile(
-          join(savedLocation, `${title}.md`),
+          newPath,
           files[id].body
         )
-        .then(() => setFiles({ ...files, [id]: modifiedFile }))
+        .then(() => {
+          setFiles(newFiles)
+          saveFilesToStore(newFiles)
+        })
     } else {
-      fileHelper.renameFile(
-        join(savedLocation, `${files[id].title}.md`),
-        join(savedLocation, `${title}.md`)
-      ).then(() => setFiles({ ...files, [id]: modifiedFile }))
+      const oldPath = join(savedLocation, `${files[id].title}.md`)
+      fileHelper.renameFile(oldPath, newPath)
+        .then(() => {
+          setFiles(newFiles)
+          saveFilesToStore(newFiles)
+        })
     }
 
   }
 
   const saveCurrentFile = () => {
+    console.log('>activeFile', activeFile)
     fileHelper.writeFile(
       join(savedLocation, `${activeFile.title}.md`),
       activeFile.body

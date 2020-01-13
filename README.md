@@ -20,6 +20,8 @@
 
 - react-fontawsome
 - react-simplemde-editor
+- electron-store
+  - data persistence solution
 
 ## Learned from the project
 
