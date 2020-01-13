@@ -25,10 +25,12 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
       const trimmedValue = value.trim()
       if (trimmedValue === '') return
       const editItem = files.find(file => file.id === editStatus)
+
       if (enterKeyPressed) {
-        onSaveEdit(editItem.id, trimmedValue)
+        onSaveEdit(editItem.id, trimmedValue, editItem.isNew)
         closeEdit(editItem)
       }
+
       if (escKeyPressed) closeEdit(editItem)
     }
 
@@ -105,7 +107,6 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                   placeholder="File Name"
                   ref={node}
                   onChange={e => {
-                    console.log('>>', e.target.value)
                     setValue(e.target.value)
                   }}
                   value={value}

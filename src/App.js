@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
-import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons'
+import { faPlus, faFileImport, faSave } from '@fortawesome/free-solid-svg-icons'
 import uuidv4 from 'uuid/v4'
 import SimpleMDE from 'react-simplemde-editor'
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'easymde/dist/easymde.min.css'
 import { flattenArr, objToArr } from './utils/helper'
+import fileHelper from './utils/fileHelper'
 
 import FileSearch from './components/FileSearch'
 import FileList from './components/FileList'
 import BottomBtn from './components/BottomBtn'
 import TabList from './components/TabList'
 import defaultFiles from './utils/defaultFiles'
+
+const { join } = window.require('path') // bypass webpack packaging system
+const { remote } = window.require('electron')
 
 function App() {
 
@@ -20,8 +24,13 @@ function App() {
   const [openedFileIDs, setOpenedFieldIDs] = useState([])
   const [unsavedFileIDs, setUnsanvedFileIDs] = useState([])
   const [searchedFiles, setSearchedFiles] = useState([])
+  const savedLocation = remote.app.getPath('documents')
 
   const filesArr = objToArr(files)
+
+  const openedFiles = openedFileIDs.map(id => files[id])
+  const activeFile = files[activeFileID]
+  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : filesArr
 
   const fileClick = id => {
     setActiveFileID(id)
@@ -47,9 +56,13 @@ function App() {
   }
 
   const deleteFile = id => {
-    delete files[id]
-    setFiles(files)
-    tabClose(id)
+    fileHelper.deleteFile(
+      join(savedLocation, `${files[id].title}.md`)
+    ).then(() => {
+      delete files[id]
+      setFiles(files)
+      tabClose(id)
+    })
   }
 
   const fileSearch = keyword => {
@@ -73,19 +86,37 @@ function App() {
     setFiles(newFiles)
   }
 
-  const updateFileName = (id, title) => {
+  const updateFileName = (id, title, isNew) => {
     const modifiedFile = {
       ...files[id],
       title,
       isNew: false
     }
-    const newFiles = { ...files, [id]: modifiedFile }
-    setFiles(newFiles)
+
+    if (isNew) {
+      fileHelper
+        .writeFile(
+          join(savedLocation, `${title}.md`),
+          files[id].body
+        )
+        .then(() => setFiles({ ...files, [id]: modifiedFile }))
+    } else {
+      fileHelper.renameFile(
+        join(savedLocation, `${files[id].title}.md`),
+        join(savedLocation, `${title}.md`)
+      ).then(() => setFiles({ ...files, [id]: modifiedFile }))
+    }
+
   }
 
-  const openedFiles = openedFileIDs.map(id => files[id])
-  const activeFile = files[activeFileID]
-  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : filesArr
+  const saveCurrentFile = () => {
+    fileHelper.writeFile(
+      join(savedLocation, `${activeFile.title}.md`),
+      activeFile.body
+    ).then(() => {
+      setUnsanvedFileIDs(unsavedFileIDs.filter(id => id !== activeFile.id))
+    })
+  }
 
   return (
     <div className="app container-fluid px-0">
@@ -99,7 +130,7 @@ function App() {
             files={fileListArr}
             onFileClick={id => fileClick(id)}
             onFileDelete={id => deleteFile(id)}
-            onSaveEdit={(id, newValue) => updateFileName(id, newValue)}
+            onSaveEdit={(id, newValue, isNew) => updateFileName(id, newValue, isNew)}
           />
           <div className="row no-gutters button-group mt-3 px-3 mb-3">
             <div className="col">
@@ -112,10 +143,10 @@ function App() {
             </div>
             <div className="col ml-3">
               <BottomBtn
-                text="Import"
+                text="Save"
                 colorClass="btn-success"
-                icon={faFileImport}
-                onBtnClick={() => {}}
+                icon={faSave}
+                onBtnClick={saveCurrentFile}
               />
             </div>
           </div>
