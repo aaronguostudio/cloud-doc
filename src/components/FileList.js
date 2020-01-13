@@ -10,7 +10,10 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const [value, setValue] = useState('')
   const enterKeyPressed = useKeyPress(13)
   const escKeyPressed = useKeyPress(27)
-  const closeEdit = () => {
+  const closeEdit = (editItem) => {
+    if (editItem.isNew) {
+      onFileDelete(editItem.id)
+    }
     setEditStatus(null)
     setValue('')
   }
@@ -19,12 +22,14 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   useEffect(() => {
     const handleInputEvent = e => {
       if (editStatus === null) return
+      const trimmedValue = value.trim()
+      if (trimmedValue === '') return
+      const editItem = files.find(file => file.id === editStatus)
       if (enterKeyPressed) {
-        const editItem = files.find(file => file.id === editStatus)
-        onSaveEdit(editItem.id, value)
-        closeEdit()
+        onSaveEdit(editItem.id, trimmedValue)
+        closeEdit(editItem)
       }
-      if (escKeyPressed) closeEdit()
+      if (escKeyPressed) closeEdit(editItem)
     }
 
     document.addEventListener('keyup', handleInputEvent)
@@ -34,7 +39,15 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   })
 
   useEffect(() => {
-    editStatus && node.current.focus()
+    const newFile = files.find(file => file.isNew)
+    if (newFile) {
+      setEditStatus(newFile.id)
+      setValue(newFile.title)
+    }
+  }, [files])
+
+  useEffect(() => {
+    editStatus && node && node.current && node.current.focus()
   })
 
   return (
@@ -46,7 +59,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
             key={file.id}
           >
             {
-              file.id !== editStatus &&
+              ((file.id !== editStatus) && !file.isNew ) &&
                 <>
                   <div>
                     <FontAwesomeIcon className="mr-2" size="1x" icon={faMarkdown} />
@@ -85,10 +98,11 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                 </>
             }
             {
-              file.id === editStatus &&
+              ((file.id === editStatus) || file.isNew) &&
               <>
                 <input
                   className="form-control"
+                  placeholder="File Name"
                   ref={node}
                   onChange={e => {
                     console.log('>>', e.target.value)
@@ -100,7 +114,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                   <button
                     className="icon-button ml-2 c-link"
                     type="button"
-                    onClick={closeEdit}
+                    onClick={() => closeEdit(file)}
                   >
                     <FontAwesomeIcon
                       title="Close"

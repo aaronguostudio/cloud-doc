@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
 import { faPlus, faFileImport } from '@fortawesome/free-solid-svg-icons'
+import uuidv4 from 'uuid/v4'
 import SimpleMDE from 'react-simplemde-editor'
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'easymde/dist/easymde.min.css'
+import { flattenArr, objToArr } from './utils/helper'
 
 import FileSearch from './components/FileSearch'
 import FileList from './components/FileList'
@@ -13,11 +15,13 @@ import defaultFiles from './utils/defaultFiles'
 
 function App() {
 
-  const [files, setFiles] = useState(defaultFiles)
+  const [files, setFiles] = useState(flattenArr(defaultFiles))
   const [activeFileID, setActiveFileID] = useState('')
   const [openedFileIDs, setOpenedFieldIDs] = useState([])
   const [unsavedFileIDs, setUnsanvedFileIDs] = useState([])
   const [searchedFiles, setSearchedFiles] = useState([])
+
+  const filesArr = objToArr(files)
 
   const fileClick = id => {
     setActiveFileID(id)
@@ -36,40 +40,52 @@ function App() {
   }
 
   const fileChange = (id, value) => {
-    const newFiles = files.map(file => {
-      if (file.id === id) file.body = value
-      return file
-    })
-    setFiles(newFiles)
+    const newFile = {...files[id], body: value}
+    setFiles({...files, [id]: newFile})
     if (unsavedFileIDs.includes(id)) return
     setUnsanvedFileIDs([...unsavedFileIDs, id])
   }
 
   const deleteFile = id => {
-    const newFiles = files.filter(file => file.id !== id)
-    setFiles(newFiles)
+    delete files[id]
+    setFiles(files)
     tabClose(id)
   }
 
   const fileSearch = keyword => {
-    const newFiles = files.filter(file => file.title.includes(keyword))
+    const newFiles = filesArr.filter(file => file.title.includes(keyword))
     setSearchedFiles(newFiles)
   }
 
-  const updateFileName = (id, title) => {
-    // const file = files.find(file => file.id === id)
-    // file.title = title
-    const newFiles = files.map(file => {
-      if (file.id === id) file.title = title
-      return file
-    })
+  const createNewFile = () => {
+    if (filesArr.find(file => file.isNew)) return
+    const newID = uuidv4()
+    const newFiles = {
+      ...files,
+      [newID]: {
+        id: newID,
+        title: '',
+        body: '',
+        createAt: new Date().getTime(),
+        isNew: true
+      }
+    }
     setFiles(newFiles)
   }
 
-  const openedFiles = openedFileIDs.map(id => files.find(file => file.id === id))
-  const activeFile = files.find(file => file.id === activeFileID)
+  const updateFileName = (id, title) => {
+    const modifiedFile = {
+      ...files[id],
+      title,
+      isNew: false
+    }
+    const newFiles = { ...files, [id]: modifiedFile }
+    setFiles(newFiles)
+  }
 
-  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : files
+  const openedFiles = openedFileIDs.map(id => files[id])
+  const activeFile = files[activeFileID]
+  const fileListArr = (searchedFiles.length > 0) ? searchedFiles : filesArr
 
   return (
     <div className="app container-fluid px-0">
@@ -88,15 +104,15 @@ function App() {
           <div className="row no-gutters button-group mt-3 px-3 mb-3">
             <div className="col">
               <BottomBtn
-                text="新建"
+                text="New"
                 colorClass="btn-primary"
                 icon={faPlus}
-                onBtnClick={() => {}}
+                onBtnClick={createNewFile}
               />
             </div>
             <div className="col ml-3">
               <BottomBtn
-                text="导入"
+                text="Import"
                 colorClass="btn-success"
                 icon={faFileImport}
                 onBtnClick={() => {}}
