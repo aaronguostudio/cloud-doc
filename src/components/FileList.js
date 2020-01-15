@@ -4,6 +4,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'
 import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faMarkdown } from '@fortawesome/free-brands-svg-icons'
 import useKeyPress from '../hooks/useKeyPress'
+import useContextMenu from '../hooks/useContextMenu'
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const [editStatus, setEditStatus] = useState(null)
@@ -18,6 +19,27 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     setValue('')
   }
   let node = useRef(null)
+
+  const clickedElement = useContextMenu([
+    {
+      label: 'Open',
+      click: () => {
+        console.log('>1', clickedElement.current)
+      }
+    },
+    {
+      label: 'Rename',
+      click: () => {
+        console.log('>1')
+      }
+    },
+    {
+      label: 'Delete',
+      click: () => {
+        console.log('>1')
+      }
+    }
+  ], '.file-list')
 
   useEffect(() => {
     const handleInputEvent = e => {

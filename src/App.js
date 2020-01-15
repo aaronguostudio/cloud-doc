@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState } from 'react'
 import { faPlus, faSave } from '@fortawesome/free-solid-svg-icons'
 import uuidv4 from 'uuid/v4'
 import SimpleMDE from 'react-simplemde-editor'
 import './App.css';
 import 'bootstrap/dist/css/bootstrap.min.css'
 import 'easymde/dist/easymde.min.css'
-import { objToArr } from './utils/helper'
+import { objToArr, flattenArr } from './utils/helper'
 import fileHelper from './utils/fileHelper'
 
 import FileSearch from './components/FileSearch'
@@ -13,7 +13,7 @@ import FileList from './components/FileList'
 import BottomBtn from './components/BottomBtn'
 import TabList from './components/TabList'
 
-const { join } = window.require('path') // bypass webpack packaging system
+const { join, basename, extname, dirname } = window.require('path') // bypass webpack packaging system
 const { remote } = window.require('electron')
 const Store = window.require('electron-store')
 
@@ -122,7 +122,10 @@ function App() {
   }
 
   const updateFileName = (id, title, isNew) => {
-    const newPath = join(savedLocation, `${title}.md`)
+    const newPath = isNew ?
+      join(savedLocation, `${title}.md`) :
+      join(dirname(files[id].path), `${title}.md` )
+
     const modifiedFile = {
       ...files[id],
       title,
@@ -142,7 +145,7 @@ function App() {
           saveFilesToStore(newFiles)
         })
     } else {
-      const oldPath = join(savedLocation, `${files[id].title}.md`)
+      const oldPath = files[id].path
       fileHelper.renameFile(oldPath, newPath)
         .then(() => {
           setFiles(newFiles)
@@ -153,12 +156,55 @@ function App() {
   }
 
   const saveCurrentFile = () => {
-    console.log('>activeFile', activeFile)
     fileHelper.writeFile(
-      join(savedLocation, `${activeFile.title}.md`),
+      join(activeFile.path, `${activeFile.title}.md`),
       activeFile.body
     ).then(() => {
       setUnsanvedFileIDs(unsavedFileIDs.filter(id => id !== activeFile.id))
+    })
+  }
+
+  const importFiles = () => {
+    remote.dialog.showOpenDialog({
+      title: 'Select markdown files for import',
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        {
+          name: 'Markdown files',
+          extensions: ['md']
+        }
+      ]
+    }).then(paths => {
+      const { canceled, filePaths } = paths
+      if (canceled) return
+
+      const existingFiles = Object.values(files)
+      const filteredPaths = filePaths.filter(path => {
+        const alreadyAdded = existingFiles.find(file => file.path === path)
+        return !alreadyAdded
+      })
+
+      // extends paths to file object
+      const importFilesArr = filteredPaths.map(path => ({
+        id: uuidv4(),
+        title: basename(path, extname(path)),
+        path
+      }))
+
+      if (importFilesArr.length === 0) return
+
+      // transform file object to flatten array
+      const newFiles = {...files, ...flattenArr(importFilesArr)}
+
+      // update state
+      setFiles(newFiles)
+      saveFilesToStore(newFiles)
+
+      remote.dialog.showMessageBox({
+        type: 'info',
+        title: `Imported ${importFilesArr.length} files successfully`,
+        message: `Imported ${importFilesArr.length} files successfully`
+      })
     })
   }
 
@@ -183,6 +229,14 @@ function App() {
                 colorClass="btn-primary"
                 icon={faPlus}
                 onBtnClick={createNewFile}
+              />
+            </div>
+            <div className="col ml-3">
+              <BottomBtn
+                text="Import"
+                colorClass="btn-success"
+                icon={faSave}
+                onBtnClick={importFiles}
               />
             </div>
             <div className="col ml-3">
