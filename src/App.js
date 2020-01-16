@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { faPlus, faSave } from '@fortawesome/free-solid-svg-icons'
 import uuidv4 from 'uuid/v4'
 import SimpleMDE from 'react-simplemde-editor'
@@ -12,9 +12,10 @@ import FileSearch from './components/FileSearch'
 import FileList from './components/FileList'
 import BottomBtn from './components/BottomBtn'
 import TabList from './components/TabList'
+import useIpcRender from './hooks/useIpcRender'
 
 const { join, basename, extname, dirname } = window.require('path') // bypass webpack packaging system
-const { remote } = window.require('electron')
+const { remote, ipcRenderer } = window.require('electron')
 const Store = window.require('electron-store')
 
 const fileStore = new Store({name: 'Files Data'})
@@ -207,6 +208,12 @@ function App() {
       })
     })
   }
+
+  useIpcRender({
+    'create-new-file': createNewFile,
+    'import-file': importFiles,
+    'save-edit-file': saveCurrentFile
+  })
 
   return (
     <div className="app container-fluid px-0">

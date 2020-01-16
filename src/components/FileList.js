@@ -5,6 +5,7 @@ import { faEdit, faTrash, faTimes } from '@fortawesome/free-solid-svg-icons'
 import { faMarkdown } from '@fortawesome/free-brands-svg-icons'
 import useKeyPress from '../hooks/useKeyPress'
 import useContextMenu from '../hooks/useContextMenu'
+import { getParentNode } from '../utils/helper'
 
 const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
   const [editStatus, setEditStatus] = useState(null)
@@ -24,7 +25,10 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
     {
       label: 'Open',
       click: () => {
-        console.log('>1', clickedElement.current)
+        const parentNode = getParentNode(clickedElement.current, 'file-item')
+        if (parentNode) {
+          onFileClick(parentNode.dataset.id)
+        }
       }
     },
     {
@@ -39,7 +43,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
         console.log('>1')
       }
     }
-  ], '.file-list')
+  ], '.file-list', files)
 
   useEffect(() => {
     const handleInputEvent = e => {
@@ -82,6 +86,8 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
           <li
             className="list-group-item bg-light d-flex justify-content-between align-items-center file-item"
             key={file.id}
+            data-id={file.id}
+            data-title={file.title}
           >
             {
               ((file.id !== editStatus) && !file.isNew ) &&
@@ -93,7 +99,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                       onClick={() => onFileClick(file.id)}
                     >{file.title}</span>
                   </div>
-                  <div>
+                  {/* <div>
                     <button
                       className="icon-button ml-2 c-link"
                       type="button"
@@ -119,7 +125,7 @@ const FileList = ({ files, onFileClick, onSaveEdit, onFileDelete }) => {
                         icon={faTrash}
                       />
                     </button>
-                  </div>
+                  </div> */}
                 </>
             }
             {

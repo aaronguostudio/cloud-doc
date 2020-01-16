@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react'
 const { remote } = window.require('electron')
 const { Menu, MenuItem } = remote
 
-const useContextMenu = (menus, targetSelector) => {
+const useContextMenu = (menus, targetSelector, deps) => {
   let clickedElement = useRef(null)
 
   useEffect(() => {
@@ -22,7 +22,7 @@ const useContextMenu = (menus, targetSelector) => {
     return () => {
       window.removeEventListener('contextmenu', handleContextMenu)
     }
-  }, [menus, targetSelector])
+  }, [...deps, menus, targetSelector])
 
   return clickedElement
 }
